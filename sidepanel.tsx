@@ -18,16 +18,18 @@ import { useEffect, useState } from "react"
 const { Text } = Typography
 
 function IndexSidePanel() {
+  const [currentName, setCurrentName] = useState("")
   const [routeOption, setRouteOption] = useState([])
   const [currentPath, setCurrentPath] = useState("")
   const [currentParam, setCurrentParam] = useState("")
-  const [currentName, setCurrentName] = useState("")
   const [currentSaved, setCurrentSaved] = useState("")
   const [savedRouteOption, setSavedRouteOption] = useState([])
 
   useEffect(() => {
-    const result = localStorage.getItem("chrome-pages")
-    setRouteOption(JSON.parse(result))
+    const pages = localStorage.getItem("chrome-pages")
+    const saved = localStorage.getItem("chrome-saved")
+    !!pages && setRouteOption(JSON.parse(pages))
+    !!saved && setSavedRouteOption(JSON.parse(saved))
   }, [])
 
   const props: UploadProps = {
@@ -100,6 +102,10 @@ function IndexSidePanel() {
     const url = `http://localhost:8080/#/${currentPath}?${currentParam}`
     const currentSave = { label: currentName || currentPath, value: url }
     setSavedRouteOption([...savedRouteOption, currentSave])
+    localStorage.setItem(
+      "chrome-saved",
+      JSON.stringify([...savedRouteOption, currentSave])
+    )
     setCurrentName("")
     message.success("保存成功")
   }
@@ -113,6 +119,7 @@ function IndexSidePanel() {
 
   const clearSavedOption = () => {
     setSavedRouteOption([])
+    localStorage.removeItem("chrome-saved")
     message.success("清除成功")
   }
 
