@@ -2,7 +2,6 @@ import { UploadOutlined } from "@ant-design/icons"
 import {
   Button,
   Col,
-  Divider,
   Input,
   message,
   Row,
@@ -100,17 +99,62 @@ function IndexSidePanel() {
 
   const saveRoutes = () => {
     const url = `http://localhost:8080/#/${currentPath}?${currentParam}`
-    const currentSave = { label: currentName || currentPath, value: url }
+    const index = savedRouteOption.findIndex((v) => v.value === currentSaved)
+    if (index > -1) {
+      message.error("新增失败，当前路由已存在，请使用编辑")
+      return
+    }
+
+    const currentSave = {
+      label: currentName || currentPath,
+      value: url,
+      path: currentPath,
+      param: currentParam,
+      name: currentName
+    }
     setSavedRouteOption([...savedRouteOption, currentSave])
     localStorage.setItem(
       "chrome-saved",
       JSON.stringify([...savedRouteOption, currentSave])
     )
+
     setCurrentName("")
-    message.success("保存成功")
+    setCurrentPath("")
+    setCurrentParam("")
+    setCurrentSaved("")
+    message.success("新增成功")
+  }
+
+  const editRoutes = () => {
+    const url = `http://localhost:8080/#/${currentPath}?${currentParam}`
+    const index = savedRouteOption.findIndex((v) => v.value === currentSaved)
+    if (index < 0) {
+      message.error("编辑失败，当前路由不存在，请使用新增")
+      return
+    }
+    savedRouteOption[index] = {
+      label: currentName || currentPath,
+      value: url,
+      path: currentPath,
+      param: currentParam,
+      name: currentName
+    }
+    setSavedRouteOption([...savedRouteOption])
+    setCurrentName("")
+    setCurrentPath("")
+    setCurrentParam("")
+    setCurrentSaved("")
+    message.success("编辑成功")
   }
 
   const handleSavedChange = (url) => {
+    const currentItem = savedRouteOption.find((v) => v.value === url)
+    if (currentItem) {
+      setCurrentName(currentItem.name)
+      setCurrentParam(currentItem.param)
+      setCurrentPath(currentItem.path)
+    }
+
     setCurrentSaved(url)
     chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
       chrome.tabs.update(tab.id, { url })
@@ -119,6 +163,10 @@ function IndexSidePanel() {
 
   const clearSavedOption = () => {
     setSavedRouteOption([])
+    setCurrentName("")
+    setCurrentPath("")
+    setCurrentParam("")
+    setCurrentSaved("")
     localStorage.removeItem("chrome-saved")
     message.success("清除成功")
   }
@@ -155,6 +203,7 @@ function IndexSidePanel() {
         onChange={handleSelectChange}
         options={routeOption}
         style={{ width: 400, marginBottom: 16 }}
+        value={currentPath}
       />
 
       <Text>参数：</Text>
@@ -163,24 +212,40 @@ function IndexSidePanel() {
         allowClear
         onChange={handleParamChange}
         style={{ width: 400, marginBottom: 16 }}
+        value={currentParam}
       />
 
-      <Row gutter={24}>
+      <Row>
         <Col>
-          <Button type="primary" onClick={updateTabUrl} style={{ width: 80 }}>
+          <Button
+            type="primary"
+            onClick={updateTabUrl}
+            style={{ width: 80, marginRight: 10 }}>
             跳转
           </Button>
         </Col>
 
         <Col>
-          <Button type="primary" onClick={saveRoutes} style={{ width: 80 }}>
-            保存
+          <Button
+            type="primary"
+            onClick={saveRoutes}
+            style={{ width: 80, marginRight: 10 }}>
+            新增
+          </Button>
+        </Col>
+
+        <Col>
+          <Button
+            type="primary"
+            onClick={editRoutes}
+            style={{ width: 80, marginRight: 10 }}>
+            编辑
           </Button>
         </Col>
 
         <Col>
           <Button color="danger" variant="solid" onClick={clearSavedOption}>
-            一键清除已保存路由
+            清除已保存路由
           </Button>
         </Col>
       </Row>
